@@ -1,15 +1,33 @@
-<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head><body>
-<h2>fb href</h2>
-<a href="fb://page/otofun">fb://page/otofun</a>
-<h2>http href</h2>
-<a href="https://fb.com/page/otofun">https://fb.com/page/otofun</a>
-<h2>Wiki</h2>
-<a href="https://en.wikipedia.org/wiki/Main_Page">https://en.wikipedia.org/wiki/Main_Page</a>
-<h2>youtube http://</h2>
-<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">https://www.youtube.com/watch?v=dQw4w9WgXcQ</a>
-<h2>youtube vnd.youtube://</h2>
-<a href="vnd.youtube://dQw4w9WgXcQ">vnd.youtube://dQw4w9WgXcQ</a>
-<h2>Red packet</h2>
-<a href="one://vinid.net/red_packet/home">one://vinid.net/red_packet/home</a>
-</body></html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h2>fb href</h2>
+    <a href="fb://page/otofun">fb://page/otofun</a>
+    <h2>http href</h2>
+    <a href="https://fb.com/page/otofun">https://fb.com/page/otofun</a>
+    <h2>Wiki</h2>
+    <a href="https://en.wikipedia.org/wiki/Main_Page">https://en.wikipedia.org/wiki/Main_Page</a>
+    <h2>youtube http://</h2>
+    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">https://www.youtube.com/watch?v=dQw4w9WgXcQ</a>
+    <h2>youtube vnd.youtube://</h2>
+    <a href="vnd.youtube://dQw4w9WgXcQ">vnd.youtube://dQw4w9WgXcQ</a>
+    <h2>Red packet</h2>
+    <a href="one://vinid.net/red_packet/home">one://vinid.net/red_packet/home</a>
+    <br/>
+
+    <h2>Open custom URL</h2>
+    <textarea id="customUrl" style="min-width: 40%;">http://example.com</textarea>
+    <button onclick="openCustomUrl()">Open link</button>
+</body>
+<script>
+    function openCustomUrl() {
+        var url = document.getElementById("customUrl").value;
+        window.open(url, "_self");
+    }
+</script>
+
+</html>

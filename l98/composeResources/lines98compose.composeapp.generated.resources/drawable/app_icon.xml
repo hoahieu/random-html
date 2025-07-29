@@ -1,0 +1,43 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Background (optional, can be transparent) -->
+    <rect
+        android:width="100"
+        android:height="100"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Top-left ball (Red) -->
+    <circle
+        android:cx="25"
+        android:cy="25"
+        android:r="20"
+        android:fillColor="#FF0000" />
+
+    <!-- Top-right ball (Blue) -->
+    <circle
+        android:cx="75"
+        android:cy="25"
+        android:r="20"
+        android:fillColor="#0000FF" />
+
+    <!-- Bottom-left ball (Green) -->
+    <circle
+        android:cx="25"
+        android:cy="75"
+        android:r="20"
+        android:fillColor="#00FF00" />
+
+    <!-- Bottom-right heart (Pink) -->
+    <path
+        android:fillColor="#FFC0CB"
+        android:pathData="M50,85 L40,75 A10,10 0 0,1 50,65 A10,10 0 0,1 60,75 Z"
+        android:translateX="25"
+        android:translateY="-5"
+        android:scaleX="1.5"
+        android:scaleY="1.5"/>
+
+</vector>

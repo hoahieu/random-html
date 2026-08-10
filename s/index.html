@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Notepad — text in a link</title>
+    <script type="module" crossorigin src="./assets/index-DJNvXjdQ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/style-gFrpV9_e.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Notepad</h1>
+        <p class="sub">
+          Your text is compressed and packed into the link itself. Nothing is stored on a server.
+        </p>
+      </header>
+
+      <textarea
+        id="editor"
+        data-testid="editor"
+        spellcheck="false"
+        placeholder="Type something, then copy the link…"
+      ></textarea>
+
+      <div class="bar">
+        <button id="copy" data-testid="copy">Copy link</button>
+        <button id="copy-text" data-testid="copy-text" class="ghost">Copy text</button>
+        <button id="clear" data-testid="clear" class="ghost">Clear</button>
+        <span id="stats" data-testid="stats" class="stats"></span>
+      </div>
+
+      <label class="url-label" for="url">Shareable link</label>
+      <input id="url" data-testid="url" readonly />
+      <p id="warn" data-testid="warn" class="warn" hidden></p>
+      <p id="error" data-testid="error" class="error" hidden></p>
+    </main>
+
+  </body>
+</html>

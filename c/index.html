@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Two attributes beyond the usual pair, and each one is load-bearing on a phone.
+
+         `interactive-widget=resizes-content`: the default is `resizes-visual`, which leaves the
+         *layout* viewport at full height when the on-screen keyboard opens — so `100dvh` on the shell
+         and the bottom bar at `order: 2` both keep painting where the keyboard now is, and the line
+         being typed can sit under it. `resizes-content` shrinks the layout viewport instead, which
+         makes the shell's height, the in-flow bar and the sheet's own scrolling all correct with no
+         JavaScript and no visual-viewport listener.
+
+         `viewport-fit=cover`: without it `env(safe-area-inset-*)` resolves to zero, so the mobile
+         panel overlay's `max(padding, inset)` in `Panel.module.css` would look right and do nothing —
+         its title and `Close` would keep painting under a notch. Opting into the safe area is what
+         makes those insets real numbers the stylesheet can read.
+
+         Both are the browser's to apply, and no test here can prove it applies them; what is proven
+         is that the attributes are present and that the layout responds correctly when the viewport
+         does shrink (`tests/e2e/phone-reach.spec.ts`).
+
+         And one of them is honoured by Chromium only. `interactive-widget` is not implemented by iOS
+         Safari, so on that platform the keyboard still overlays the layout viewport: the bottom bar and
+         the focused line can sit behind it exactly as before. The attribute is therefore the whole of
+         the keyboard problem on Android Chrome and *half* of it on iOS, where closing the gap needs a
+         `visualViewport` listener — real JavaScript, a real product decision about how the shell
+         reacts, and not this story's. Recorded in `deferred-work.md` rather than left as a comment
+         nobody reads. `viewport-fit=cover` has no such caveat: iOS Safari is where it originated, and
+         it is what makes every `--safe-area-*` rule in `src/ui` do anything at all. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, interactive-widget=resizes-content, viewport-fit=cover"
+    />
+    <!-- Dark is the shipped default, and this is what stops the browser painting its own
+         chrome light before the stylesheet lands. `color-scheme` is then owned by `tokens.css`, off
+         `data-theme`; `theme-color` has no CSS equivalent at all, so the shell's own effect rewrites
+         the tag's content from `--bg` whenever the theme changes. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0d12" />
+    <meta
+      name="description"
+      content="A calculator you write in: a multi-line sheet with exact decimal arithmetic, named values and units."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>calc</title>
+    <script type="module" crossorigin src="./assets/index-Bd3eeviR.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C18pgqhS.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

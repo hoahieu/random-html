@@ -6,10 +6,20 @@
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 
+  // Saved inputs live under "qf2.". Older builds saved their built-in sample data under "qf.",
+  // so drop those keys once to make sure the inputs start empty.
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('qf.'))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch (e) {
+    /* storage unavailable */
+  }
+
   const store = {
     get(k, d) {
       try {
-        const v = localStorage.getItem('qf.' + k);
+        const v = localStorage.getItem('qf2.' + k);
         return v === null ? d : JSON.parse(v);
       } catch (e) {
         return d;
@@ -17,7 +27,7 @@
     },
     set(k, v) {
       try {
-        localStorage.setItem('qf.' + k, JSON.stringify(v));
+        localStorage.setItem('qf2.' + k, JSON.stringify(v));
       } catch (e) {
         /* storage unavailable */
       }

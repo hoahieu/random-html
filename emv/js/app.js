@@ -75,8 +75,8 @@
     if (!['iso', 'tlv', 'url', 'ref'].includes(name)) name = 'iso';
     $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
     $$('.view').forEach((v) => (v.hidden = v.id !== 'view-' + name));
-    store.set('tab', name);
-    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    // Drop a deep-link hash once used, so a reload goes back to the default (ISO 8583) tab
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   }
 
   function applyTheme(t) {
@@ -778,7 +778,7 @@
     renderReference();
     $('#ref-search').addEventListener('input', filterReference);
 
-    showTab(location.hash.slice(1) || store.get('tab', 'iso'));
+    showTab(location.hash.slice(1) || 'iso');
     runISO();
     runTLV();
     runURL();

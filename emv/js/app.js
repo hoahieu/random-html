@@ -241,6 +241,10 @@
         html += `<tr ${attrs} class="bad"><td class="tag">!</td><td>${esc(n.message)}</td><td class="num">${n.length}</td><td class="val mono">${U.bytesToHex(n.raw)}</td><td></td></tr>`;
         return;
       }
+      if (n.text) {
+        html += `<tr ${attrs}><td class="tag">${esc(n.tag)}</td><td class="tname"><span class="unknown">Text TLV</span></td><td class="num">${esc(n.lenText)}</td><td class="val mono">${esc(U.bytesToText(n.value))}</td><td></td></tr>`;
+        return;
+      }
       const def = emv.lookup(n.tag);
       const name = def ? `${esc(def.name)}<span class="src">${esc(def.fmt)}</span>` : `<span class="unknown">${unknownName(n)}</span>`;
       if (n.constructed) {
@@ -294,6 +298,7 @@
       .filter((n) => n.type !== 'padding')
       .map((n) => {
         if (n.type === 'error') return { error: n.message, offset: n.offset };
+        if (n.text) return { tag: n.tag, length: n.lenText, value: U.bytesToText(n.value) };
         const def = emv.lookup(n.tag);
         const o = { tag: n.tag, name: def ? def.name : null, length: n.length };
         if (n.constructed) o.children = tlvJSON(n.children, ctx);
@@ -457,8 +462,8 @@
       if (f.tlv) {
         assignIds(f.tlv, `f${f.id}-`);
         const count = f.tlv.filter((n) => n.type === 'tlv').length;
-        val = `<span class="muted">${f.raw.length} bytes</span>`;
-        desc = decodedHTML({ text: `${count} TLV tag(s) — see below` }, f.warn);
+        if (!f.textTlv) val = `<span class="muted">${f.raw.length} bytes</span>`;
+        desc = decodedHTML({ text: `${count} ${f.textTlv ? 'text ' : ''}TLV tag(s) — see below` }, f.warn);
       }
       rows.push(
         `<tr data-seg="${e.id}" title="${title}"${f.warn ? ' class="warnrow"' : ''}><td class="de">${f.id}</td><td class="name">${esc(def.name)}${def.custom ? ' <span class="chip">override</span>' : ''}</td><td class="type mono">${esc(iso.typeLabel(def))}</td><td class="num">${f.len}</td><td class="val mono">${val}</td><td class="desc">${desc}</td>${raw}</tr>`
@@ -466,7 +471,7 @@
       if (f.tlv) {
         const ctx = emv.context(f.tlv);
         rows.push(
-          `<tr class="nested"><td></td><td colspan="6"><div class="nested-title"><span>DE ${f.id} · BER-TLV</span><button class="btn link" data-open-tlv="${U.bytesToHex(f.raw)}">Open in TLV tab →</button></div>${tlvTableHTML(f.tlv, ctx)}</td></tr>`
+          `<tr class="nested"><td></td><td colspan="6"><div class="nested-title"><span>DE ${f.id} · ${f.textTlv ? 'Text TLV' : 'BER-TLV'}</span><button class="btn link" data-open-tlv="${esc(f.textTlv ? U.bytesToText(f.raw) : U.bytesToHex(f.raw))}" data-mode="${f.textTlv ? 'text' : 'auto'}">Open in TLV tab →</button></div>${tlvTableHTML(f.tlv, ctx)}</td></tr>`
         );
       }
     }
@@ -508,15 +513,27 @@
   const tlvLink = linkViews($('#tlv-out'), tlvHexEl, tlvHex);
   let tlvLast = null;
 
+  function textTlvOpts() {
+    return { tagLen: +$('#tlv-tagLen').value, lenDigits: $('#tlv-lenDigits').value };
+  }
+
+  const trimText = (text) => text.replace(/^\s+|\s+$/g, '');
+
+  /** Returns { bytes, mode, nodes? } — text TLV is tried before Base64 in auto mode. */
   function tlvBytes(text, mode) {
+    if (mode === 'text') {
+      const bytes = U.textToBytes(trimText(text));
+      return { bytes, mode, nodes: tlv.parseText(bytes, textTlvOpts()) };
+    }
     if (mode === 'auto') {
-      if (/^[0-9A-F]*$/.test(U.cleanHex(text))) mode = 'hex';
-      else {
-        try {
-          return { bytes: U.base64ToBytes(text), mode: 'base64' };
-        } catch (e) {
-          throw new Error('Input is neither valid hex nor Base64');
-        }
+      if (/^[0-9A-F]*$/.test(U.cleanHex(text))) return U.toBytes(text, 'hex');
+      const bytes = U.textToBytes(trimText(text));
+      const nodes = tlv.parseText(bytes, textTlvOpts());
+      if (!tlv.hasError(nodes)) return { bytes, mode: 'text', nodes };
+      try {
+        return { bytes: U.base64ToBytes(text), mode: 'base64' };
+      } catch (e) {
+        return { bytes, mode: 'text', nodes };
       }
     }
     return U.toBytes(text, mode);
@@ -524,7 +541,7 @@
 
   function runTLV() {
     const text = $('#tlv-input').value;
-    store.set('tlv', { input: text, inputMode: $('#tlv-inputMode').value, padding: $('#tlv-padding').checked });
+    store.set('tlv', { input: text, inputMode: $('#tlv-inputMode').value, padding: $('#tlv-padding').checked, tagLen: $('#tlv-tagLen').value, lenDigits: $('#tlv-lenDigits').value });
     const status = $('#tlv-status');
     const out = $('#tlv-out');
     if (!text.trim()) {
@@ -534,14 +551,15 @@
     }
     let bytes;
     let mode;
+    let nodes;
     try {
-      ({ bytes, mode } = tlvBytes(text, $('#tlv-inputMode').value));
+      ({ bytes, mode, nodes } = tlvBytes(text, $('#tlv-inputMode').value));
     } catch (e) {
       status.innerHTML = statusHTML([['err', e.message]]);
       out.hidden = true;
       return;
     }
-    const nodes = tlv.parse(bytes, { skipPadding: $('#tlv-padding').checked });
+    if (!nodes) nodes = tlv.parse(bytes, { skipPadding: $('#tlv-padding').checked });
     assignIds(nodes, 't');
     const ctx = emv.context(nodes);
     tlvLast = { nodes, ctx };
@@ -552,11 +570,11 @@
     tlv.walk(nodes, (n) => {
       if (n.type === 'tlv') {
         count++;
-        if (!emv.lookup(n.tag)) unknown++;
+        if (!n.text && !emv.lookup(n.tag)) unknown++;
       }
       if (n.type === 'error') msgs.push(['err', `Offset ${n.offset}: ${n.message}`]);
     });
-    msgs.push([msgs.length ? 'warn' : 'ok', `${count} tag(s) in ${bytes.length} bytes${mode === 'base64' ? ' (Base64 input)' : ''}${unknown ? ` · ${unknown} not in dictionary` : ''}`]);
+    msgs.push([msgs.length ? 'warn' : 'ok', `${count} tag(s) in ${bytes.length} bytes${mode === 'base64' ? ' (Base64 input)' : mode === 'text' ? ' (text TLV)' : ''}${unknown ? ` · ${unknown} not in dictionary` : ''}`]);
     status.innerHTML = statusHTML(msgs);
 
     out.hidden = false;
@@ -621,6 +639,8 @@
       $('#tlv-input').value = t.input || '';
       $('#tlv-inputMode').value = t.inputMode || 'auto';
       $('#tlv-padding').checked = t.padding !== false;
+      if (t.tagLen) $('#tlv-tagLen').value = t.tagLen;
+      if (t.lenDigits) $('#tlv-lenDigits').value = t.lenDigits;
     } else {
       $('#tlv-input').value = SAMPLES['tlv-icc'].text;
     }
@@ -686,6 +706,7 @@
       const b = e.target.closest('[data-open-tlv]');
       if (!b) return;
       $('#tlv-input').value = b.dataset.openTlv;
+      $('#tlv-inputMode').value = b.dataset.mode || 'auto';
       runTLV();
       showTab('tlv');
       window.scrollTo({ top: 0 });
@@ -697,6 +718,8 @@
     $('#tlv-input').addEventListener('input', runTLVSoon);
     $('#tlv-inputMode').addEventListener('change', runTLV);
     $('#tlv-padding').addEventListener('change', runTLV);
+    $('#tlv-tagLen').addEventListener('change', runTLV);
+    $('#tlv-lenDigits').addEventListener('change', runTLV);
     $('#tlv-clear').addEventListener('click', () => {
       $('#tlv-input').value = '';
       runTLV();

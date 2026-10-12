@@ -94,5 +94,61 @@
     return err;
   }
 
-  QF.tlv = { parse, readTag, walk, hasError };
+  /**
+   * Text TLV: ASCII tag + decimal ASCII length + value, e.g. "05" "15" "attendedinpayee".
+   * Length width may vary per item (lenDigits 'auto' tries 2 then 3 digits), so search for a
+   * layout that consumes the whole input.
+   */
+  function parseText(bytes, opts = {}) {
+    const tagLen = opts.tagLen || 2;
+    const widths = !opts.lenDigits || opts.lenDigits === 'auto' ? [2, 3] : [+opts.lenDigits];
+    const tagRe = opts.digitTags ? /^\d+$/ : /^[0-9A-Za-z]+$/;
+    const minLen = opts.minLen || 0;
+    const n = bytes.length;
+    let s = '';
+    for (let i = 0; i < n; i++) s += String.fromCharCode(bytes[i]);
+    const dead = new Uint8Array(n + 1);
+    let furthest = { pos: 0, items: [] };
+
+    function dfs(p, items) {
+      if (p === n) return items;
+      if (dead[p]) return null;
+      if (p > furthest.pos) furthest = { pos: p, items };
+      for (const w of widths) {
+        const tag = s.substr(p, tagLen);
+        const lenText = s.substr(p + tagLen, w);
+        if (tag.length < tagLen || !tagRe.test(tag) || lenText.length < w || !/^\d+$/.test(lenText)) continue;
+        const len = parseInt(lenText, 10);
+        const valueOffset = p + tagLen + w;
+        if (len < minLen || valueOffset + len > n) continue;
+        const node = {
+          type: 'tlv',
+          text: true,
+          tag,
+          lenText,
+          constructed: false,
+          offset: p,
+          headerLength: tagLen + w,
+          length: len,
+          totalLength: tagLen + w + len,
+          valueOffset,
+          value: bytes.subarray(valueOffset, valueOffset + len),
+          depth: 0,
+        };
+        const r = dfs(valueOffset + len, items.concat([node]));
+        if (r) return r;
+      }
+      dead[p] = 1;
+      return null;
+    }
+
+    const ok = n > 0 ? dfs(0, []) : [];
+    if (ok) return ok;
+    const p = furthest.pos;
+    return furthest.items.concat([
+      { type: 'error', offset: p, length: n - p, raw: bytes.subarray(p), depth: 0, message: `No tag/length layout fits the data from offset ${p}` },
+    ]);
+  }
+
+  QF.tlv = { parse, parseText, readTag, walk, hasError };
 })(typeof window !== 'undefined' ? window : globalThis);

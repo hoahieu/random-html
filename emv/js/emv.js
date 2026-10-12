@@ -497,7 +497,7 @@
   }
 
   function decode(node, ctx = {}) {
-    if (node.type !== 'tlv' || node.constructed) return null;
+    if (node.type !== 'tlv' || node.constructed || node.text) return null;
     const v = node.value;
     if (!v.length) return null;
     const fn = D[node.tag];

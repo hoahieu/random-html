@@ -507,6 +507,15 @@
       } catch (e) {
         f.decoded = null;
       }
+      // Private-use text fields (e.g. DE 127) often carry text TLV: "05" "15" "attendedinpayee"…
+      const t = f.def.type;
+      if (!f.tlv && f.def.var && f.id !== 2 && /^(an|ans|ns|a|anp)$/.test(t) && f.raw && f.raw.length >= 8) {
+        const nodes = QF.tlv.parseText(f.raw, { tagLen: 2, lenDigits: 'auto', digitTags: true, minLen: 1 });
+        if (nodes.length >= 2 && !QF.tlv.hasError(nodes)) {
+          f.tlv = nodes;
+          f.textTlv = true;
+        }
+      }
     }
   }
 

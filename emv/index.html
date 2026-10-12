@@ -98,16 +98,34 @@
               <button class="btn ghost" id="tlv-clear">Clear</button>
             </div>
           </div>
-          <textarea id="tlv-input" spellcheck="false" autocomplete="off" placeholder="Paste BER-TLV as hex (e.g. 9F02060000000010009F360200A1…) or Base64"></textarea>
+          <textarea id="tlv-input" spellcheck="false" autocomplete="off" placeholder="Paste BER-TLV as hex (e.g. 9F02060000000010009F360200A1…) or Base64, or text TLV (e.g. 0515attendedinpayee0706no_pin)"></textarea>
           <div class="options">
             <label class="opt">Input
               <select id="tlv-inputMode">
                 <option value="auto">Auto</option>
                 <option value="hex">Hex</option>
                 <option value="base64">Base64</option>
+                <option value="text">Text TLV</option>
               </select>
             </label>
             <label class="opt check"><input type="checkbox" id="tlv-padding" checked /> Skip 00/FF padding</label>
+            <label class="opt">Text TLV tag
+              <select id="tlv-tagLen">
+                <option value="1">1 char</option>
+                <option value="2" selected>2 chars</option>
+                <option value="3">3 chars</option>
+                <option value="4">4 chars</option>
+              </select>
+            </label>
+            <label class="opt">length
+              <select id="tlv-lenDigits">
+                <option value="auto">Auto (2 or 3 digits)</option>
+                <option value="1">1 digit</option>
+                <option value="2">2 digits</option>
+                <option value="3">3 digits</option>
+                <option value="4">4 digits</option>
+              </select>
+            </label>
           </div>
           <div class="status" id="tlv-status"></div>
         </div>

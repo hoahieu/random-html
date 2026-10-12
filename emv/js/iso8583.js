@@ -507,7 +507,7 @@
       } catch (e) {
         f.decoded = null;
       }
-      // Private-use text fields (e.g. DE 127) often carry text TLV: "05" "15" "attendedinpayee"…
+      // Private-use text fields (e.g. DE 127) often carry text TLV: tag "05", length "05", value "HELLO"
       const t = f.def.type;
       if (!f.tlv && f.def.var && f.id !== 2 && /^(an|ans|ns|a|anp)$/.test(t) && f.raw && f.raw.length >= 8) {
         const nodes = QF.tlv.parseText(f.raw, { tagLen: 2, lenDigits: 'auto', digitTags: true, minLen: 1 });

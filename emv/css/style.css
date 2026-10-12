@@ -598,6 +598,23 @@ tr.collapsed .caret {
   font-style: italic;
 }
 
+/* URL decode */
+textarea.url-text {
+  min-height: 0;
+  resize: vertical;
+  word-break: break-all;
+}
+.url-table td.key {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--accent);
+  word-break: break-all;
+  min-width: 160px;
+}
+.url-table td.val {
+  max-width: 560px;
+}
+
 /* reference */
 .ref-table td.tag {
   font: 600 12.5px var(--mono);

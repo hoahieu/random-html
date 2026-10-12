@@ -24,29 +24,6 @@
     },
   };
 
-  const SAMPLES = {
-    'iso-pos': {
-      tab: 'iso',
-      text: '00E560000100000200703C078020C092001647617390010101190000000000001500000001231430151012281200510001001900344761739001010119D281220112345678905445524D303030314D45524348414E54303030303030313730341A2B3C4D5E6F708101259F26087A3B9C1D2E4F50619F2701809F100706010A03A0B8009F37041A2B3C4D9F36020012950500800480009A032610129C01009F02060000001500005F2A020704820219809F1A0207049F03060000000000009F3303E0F8C89F34031F03029F3501228407A00000000310109F0902008C9F4104000001235F340101',
-    },
-    'iso-host': {
-      tab: 'iso',
-      text: '0210F23800010EE0840004000000040000001654133300896000100030000000000125501012143015000456143015101206123456628514000456A1B2C300ATM00042BANKBRANCH00042MAIN STREET ATM          SPRINGFIELD  US8400401002840C0000000500001001840C0000000450003011400112233445566',
-    },
-    'tlv-icc': {
-      tab: 'tlv',
-      text: '9F26087A3B9C1D2E4F50619F2701809F100706010A03A0B8009F37041A2B3C4D9F36020012950500800480009A032610129C01009F02060000001500005F2A020704820219809F1A0207049F03060000000000009F3303E0F8C89F34031F03029F3501228407A00000000310109F0902008C9F4104000001235F340101',
-    },
-    'tlv-fci': {
-      tab: 'tlv',
-      text: '6F488407A0000000031010A53D500B56495341204352454449548701019F38189F66049F02069F03069F1A0295055F2A029A039C019F37045F2D04656E6672BF0C089F5A051108400840',
-    },
-    'tlv-rec': {
-      tab: 'tlv',
-      text: '705057114761739001010119D281220112345678905F2008444F452F4A4F484E5A0847617390010101195F24032812318E0E000000000000000042031E031F00941008010100100102011801020018010100',
-    },
-  };
-
   // ---------- small helpers ----------
   function debounce(fn, ms) {
     let t;
@@ -95,7 +72,7 @@
 
   // ---------- tabs & theme ----------
   function showTab(name) {
-    if (!['iso', 'tlv', 'ref'].includes(name)) name = 'iso';
+    if (!['iso', 'tlv', 'url', 'ref'].includes(name)) name = 'iso';
     $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
     $$('.view').forEach((v) => (v.hidden = v.id !== 'view-' + name));
     store.set('tab', name);
@@ -591,6 +568,64 @@
     updateCollapse(table);
   }
 
+  // ---------- URL decode tab ----------
+  let urlLast = null;
+
+  /** Spot values worth decoding further: EMV TLV hex and Track 2 data. */
+  function urlNotes(value) {
+    if (value == null) return '';
+    const v = value.trim();
+    if (v.length >= 6 && v.length % 2 === 0 && /^[0-9A-Fa-f]+$/.test(v) && !/^\d+$/.test(v)) {
+      const nodes = tlv.parse(U.hexToBytes(v));
+      let tags = 0;
+      let known = 0;
+      tlv.walk(nodes, (n) => {
+        if (n.type === 'tlv') {
+          tags++;
+          if (emv.lookup(n.tag)) known++;
+        }
+      });
+      if (tags >= 2 && known && !tlv.hasError(nodes)) {
+        return `<div class="dtext">BER-TLV · ${tags} EMV tag(s)</div><button class="btn link" data-open-tlv="${esc(v)}" data-mode="hex">Open in TLV tab →</button>`;
+      }
+    }
+    if (/^\d{12,19}[=D]\d{4}/i.test(v)) return decodedHTML(U.parseTrack2(v));
+    return '';
+  }
+
+  function runURL() {
+    const text = $('#url-input').value;
+    const opts = { plus: $('#url-plus').checked, keepSeparators: $('#url-keep').checked };
+    store.set('url', { input: text, plus: opts.plus, keep: opts.keepSeparators });
+    const status = $('#url-status');
+    const show = (on) => {
+      $('#url-text-panel').hidden = !on;
+      $('#url-table-panel').hidden = !on;
+    };
+    if (!text.trim()) {
+      status.innerHTML = '';
+      show(false);
+      return;
+    }
+    const res = QF.url.parse(text, opts);
+    urlLast = res;
+    status.innerHTML = statusHTML([['ok', `${res.params.length} parameter(s)${res.url ? ` · URL ${res.url}` : ''}`]]);
+    show(true);
+    const out = $('#url-text');
+    out.value = res.params.map((p) => p.line).join('\n');
+    out.style.height = 'auto';
+    out.style.height = Math.min(out.scrollHeight + 4, 600) + 'px';
+    $('#url-table').innerHTML =
+      `<thead><tr><th class="num">#</th><th>Key</th><th>Value</th><th>Decoded</th></tr></thead><tbody>` +
+      res.params
+        .map(
+          (p, i) =>
+            `<tr><td class="num muted">${i + 1}</td><td class="key">${esc(p.key)}</td><td class="val mono">${p.value == null ? '<span class="muted">(no value)</span>' : esc(p.value)}</td><td class="desc">${urlNotes(p.value)}</td></tr>`
+        )
+        .join('') +
+      `</tbody>`;
+  }
+
   // ---------- reference tab ----------
   function renderReference() {
     const emvRows = emv.TAG_LIST.map(
@@ -631,8 +666,6 @@
         $('#iso-skip').value = s.cfg.skip || 0;
       }
       if (s.overrides) $('.overrides').open = true;
-    } else {
-      $('#iso-input').value = SAMPLES['iso-pos'].text;
     }
     const t = store.get('tlv', null);
     if (t) {
@@ -641,8 +674,6 @@
       $('#tlv-padding').checked = t.padding !== false;
       if (t.tagLen) $('#tlv-tagLen').value = t.tagLen;
       if (t.lenDigits) $('#tlv-lenDigits').value = t.lenDigits;
-    } else {
-      $('#tlv-input').value = SAMPLES['tlv-icc'].text;
     }
   }
 
@@ -660,20 +691,6 @@
       applyTheme(next);
       store.set('theme', next);
     });
-
-    $$('[data-sample]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const s = SAMPLES[b.dataset.sample];
-        if (s.tab === 'iso') {
-          $('#iso-input').value = s.text;
-          $('#iso-auto').checked = true;
-          runISO();
-        } else {
-          $('#tlv-input').value = s.text;
-          runTLV();
-        }
-      })
-    );
 
     // ISO events
     const runISOSoon = debounce(runISO, 150);
@@ -730,6 +747,33 @@
     $('#tlv-copy').addEventListener('click', () => tlvLast && copy(JSON.stringify(tlvJSON(tlvLast.nodes, tlvLast.ctx), null, 2)));
     bindCollapse($('#tlv-out'));
 
+    // URL decode
+    const u = store.get('url', null);
+    $('#url-input').value = u ? u.input || '' : '';
+    if (u) {
+      $('#url-plus').checked = u.plus !== false;
+      $('#url-keep').checked = u.keep !== false;
+    }
+    $('#url-input').addEventListener('input', debounce(runURL, 150));
+    $('#url-plus').addEventListener('change', runURL);
+    $('#url-keep').addEventListener('change', runURL);
+    $('#url-clear').addEventListener('click', () => {
+      $('#url-input').value = '';
+      runURL();
+      $('#url-input').focus();
+    });
+    $('#url-copy-text').addEventListener('click', () => copy($('#url-text').value));
+    $('#url-copy-json').addEventListener('click', () => urlLast && copy(JSON.stringify(QF.url.toObject(urlLast.params), null, 2)));
+    $('#view-url').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-open-tlv]');
+      if (!b) return;
+      $('#tlv-input').value = b.dataset.openTlv;
+      $('#tlv-inputMode').value = b.dataset.mode || 'auto';
+      runTLV();
+      showTab('tlv');
+      window.scrollTo({ top: 0 });
+    });
+
     // Reference
     renderReference();
     $('#ref-search').addEventListener('input', filterReference);
@@ -737,6 +781,7 @@
     showTab(location.hash.slice(1) || store.get('tab', 'iso'));
     runISO();
     runTLV();
+    runURL();
   }
 
   init();

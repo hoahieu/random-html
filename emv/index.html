@@ -15,6 +15,7 @@
       <nav class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="iso">ISO 8583</button>
         <button class="tab" role="tab" data-tab="tlv">TLV / EMV</button>
+        <button class="tab" role="tab" data-tab="url">URL decode</button>
         <button class="tab" role="tab" data-tab="ref">Tag reference</button>
       </nav>
       <button class="icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">◐</button>
@@ -27,12 +28,10 @@
           <div class="panel-head">
             <h2>ISO 8583 message</h2>
             <div class="actions">
-              <button class="btn ghost" data-sample="iso-pos">Sample: POS (BCD)</button>
-              <button class="btn ghost" data-sample="iso-host">Sample: Host (ASCII)</button>
               <button class="btn ghost" id="iso-clear">Clear</button>
             </div>
           </div>
-          <textarea id="iso-input" spellcheck="false" autocomplete="off" placeholder="Paste a message as hex (spaces/newlines OK) or as raw ASCII text…"></textarea>
+          <textarea id="iso-input" spellcheck="false" autocomplete="off"></textarea>
           <div class="options">
             <label class="opt">Input
               <select id="iso-inputMode">
@@ -58,7 +57,7 @@
               Redefine fields for your network spec as <code>id:type:fixed|LL|LLL:maxLen[:name]</code>, separated by commas or newlines.
               Types: <code>n z b an ans ns xn tlv</code>. Example: <code>48:ans:LLL:999:Additional data, 62:tlv:LLL:999</code>
             </p>
-            <textarea id="iso-overrides" spellcheck="false" rows="2" placeholder="e.g. 63:ans:LLL:999"></textarea>
+            <textarea id="iso-overrides" spellcheck="false" rows="2"></textarea>
           </details>
           <div class="status" id="iso-status"></div>
         </div>
@@ -92,13 +91,10 @@
           <div class="panel-head">
             <h2>TLV data</h2>
             <div class="actions">
-              <button class="btn ghost" data-sample="tlv-icc">Sample: DE 55</button>
-              <button class="btn ghost" data-sample="tlv-fci">Sample: FCI</button>
-              <button class="btn ghost" data-sample="tlv-rec">Sample: Record</button>
               <button class="btn ghost" id="tlv-clear">Clear</button>
             </div>
           </div>
-          <textarea id="tlv-input" spellcheck="false" autocomplete="off" placeholder="Paste BER-TLV as hex (e.g. 9F02060000000010009F360200A1…) or Base64, or text TLV (e.g. 0515attendedinpayee0706no_pin)"></textarea>
+          <textarea id="tlv-input" spellcheck="false" autocomplete="off"></textarea>
           <div class="options">
             <label class="opt">Input
               <select id="tlv-inputMode">
@@ -149,12 +145,48 @@
         </div>
       </section>
 
+      <!-- URL decode -->
+      <section class="view" id="view-url" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>URL-encoded data</h2>
+            <div class="actions">
+              <button class="btn ghost" id="url-clear">Clear</button>
+            </div>
+          </div>
+          <textarea id="url-input" spellcheck="false" autocomplete="off"></textarea>
+          <div class="options">
+            <label class="opt check"><input type="checkbox" id="url-plus" checked /> Decode + as space</label>
+            <label class="opt check" title="Keeps the output lines unambiguous"><input type="checkbox" id="url-keep" checked /> Keep %3D %26 %25 encoded in values</label>
+          </div>
+          <div class="status" id="url-status"></div>
+        </div>
+
+        <div class="panel" id="url-text-panel" hidden>
+          <div class="panel-head">
+            <h2>Decoded</h2>
+            <div class="actions">
+              <button class="btn ghost" id="url-copy-text">Copy text</button>
+              <button class="btn ghost" id="url-copy-json">Copy JSON</button>
+            </div>
+          </div>
+          <textarea id="url-text" class="url-text" readonly spellcheck="false"></textarea>
+        </div>
+
+        <div class="panel" id="url-table-panel" hidden>
+          <div class="panel-head"><h2>Parameters</h2></div>
+          <div class="table-wrap">
+            <table class="grid url-table" id="url-table"></table>
+          </div>
+        </div>
+      </section>
+
       <!-- Tag reference -->
       <section class="view" id="view-ref" hidden>
         <div class="panel">
           <div class="panel-head">
             <h2>EMV tag reference</h2>
-            <input type="search" id="ref-search" placeholder="Search tag or name… (e.g. 9F36, cryptogram)" />
+            <input type="search" id="ref-search" />
           </div>
           <div class="table-wrap">
             <table class="grid ref-table" id="ref-table"></table>
@@ -177,6 +209,7 @@
     <script src="js/emv.js"></script>
     <script src="js/iso8583-fields.js"></script>
     <script src="js/iso8583.js"></script>
+    <script src="js/urldecode.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

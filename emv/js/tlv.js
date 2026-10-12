@@ -95,7 +95,7 @@
   }
 
   /**
-   * Text TLV: ASCII tag + decimal ASCII length + value, e.g. "05" "15" "attendedinpayee".
+   * Text TLV: ASCII tag + decimal ASCII length + value, e.g. "05" "05" "HELLO".
    * Length width may vary per item (lenDigits 'auto' tries 2 then 3 digits), so search for a
    * layout that consumes the whole input.
    */

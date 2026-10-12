@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickFormat – ISO 8583 &amp; TLV Parser</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">{ }</span>
+        <span class="brand-name">QuickFormat</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="iso">ISO 8583</button>
+        <button class="tab" role="tab" data-tab="tlv">TLV / EMV</button>
+        <button class="tab" role="tab" data-tab="ref">Tag reference</button>
+      </nav>
+      <button class="icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+    </header>
+
+    <main>
+      <!-- ISO 8583 -->
+      <section class="view" id="view-iso" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>ISO 8583 message</h2>
+            <div class="actions">
+              <button class="btn ghost" data-sample="iso-pos">Sample: POS (BCD)</button>
+              <button class="btn ghost" data-sample="iso-host">Sample: Host (ASCII)</button>
+              <button class="btn ghost" id="iso-clear">Clear</button>
+            </div>
+          </div>
+          <textarea id="iso-input" spellcheck="false" autocomplete="off" placeholder="Paste a message as hex (spaces/newlines OK) or as raw ASCII text…"></textarea>
+          <div class="options">
+            <label class="opt">Input
+              <select id="iso-inputMode">
+                <option value="auto">Auto</option>
+                <option value="hex">Hex</option>
+                <option value="text">Raw text</option>
+                <option value="base64">Base64</option>
+              </select>
+            </label>
+            <label class="opt check"><input type="checkbox" id="iso-auto" checked /> Auto-detect encoding</label>
+            <label class="opt">Spec <select id="iso-spec"></select></label>
+            <label class="opt">Header <select id="iso-header"></select></label>
+            <label class="opt">MTI <select id="iso-mti"></select></label>
+            <label class="opt">Bitmap <select id="iso-bitmap"></select></label>
+            <label class="opt">Length prefix <select id="iso-lenPrefix"></select></label>
+            <label class="opt">Numeric fields <select id="iso-numeric"></select></label>
+            <label class="opt">Binary fields <select id="iso-binary"></select></label>
+            <label class="opt">Skip bytes <input type="number" id="iso-skip" min="0" max="64" value="0" /></label>
+          </div>
+          <details class="overrides">
+            <summary>Field overrides</summary>
+            <p class="hint">
+              Redefine fields for your network spec as <code>id:type:fixed|LL|LLL:maxLen[:name]</code>, separated by commas or newlines.
+              Types: <code>n z b an ans ns xn tlv</code>. Example: <code>48:ans:LLL:999:Additional data, 62:tlv:LLL:999</code>
+            </p>
+            <textarea id="iso-overrides" spellcheck="false" rows="2" placeholder="e.g. 63:ans:LLL:999"></textarea>
+          </details>
+          <div class="status" id="iso-status"></div>
+        </div>
+
+        <div id="iso-out" hidden>
+          <div class="panel summary" id="iso-summary"></div>
+          <div class="results">
+            <div class="panel table-panel">
+              <div class="panel-head">
+                <h2>Fields</h2>
+                <div class="actions">
+                  <label class="opt check small"><input type="checkbox" id="iso-raw" /> Raw bytes</label>
+                  <button class="btn ghost" id="iso-copy">Copy JSON</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="grid iso-table" id="iso-table"></table>
+              </div>
+            </div>
+            <div class="panel hex-panel">
+              <div class="panel-head"><h2>Bytes</h2><span class="muted small" id="iso-bytecount"></span></div>
+              <div class="hexview" id="iso-hex"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TLV -->
+      <section class="view" id="view-tlv" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>TLV data</h2>
+            <div class="actions">
+              <button class="btn ghost" data-sample="tlv-icc">Sample: DE 55</button>
+              <button class="btn ghost" data-sample="tlv-fci">Sample: FCI</button>
+              <button class="btn ghost" data-sample="tlv-rec">Sample: Record</button>
+              <button class="btn ghost" id="tlv-clear">Clear</button>
+            </div>
+          </div>
+          <textarea id="tlv-input" spellcheck="false" autocomplete="off" placeholder="Paste BER-TLV as hex (e.g. 9F02060000000010009F360200A1…) or Base64"></textarea>
+          <div class="options">
+            <label class="opt">Input
+              <select id="tlv-inputMode">
+                <option value="auto">Auto</option>
+                <option value="hex">Hex</option>
+                <option value="base64">Base64</option>
+              </select>
+            </label>
+            <label class="opt check"><input type="checkbox" id="tlv-padding" checked /> Skip 00/FF padding</label>
+          </div>
+          <div class="status" id="tlv-status"></div>
+        </div>
+
+        <div class="results" id="tlv-out" hidden>
+          <div class="panel table-panel">
+            <div class="panel-head">
+              <h2>Tags</h2>
+              <div class="actions">
+                <button class="btn ghost" id="tlv-expand">Expand all</button>
+                <button class="btn ghost" id="tlv-collapse">Collapse all</button>
+                <button class="btn ghost" id="tlv-copy">Copy JSON</button>
+              </div>
+            </div>
+            <div class="table-wrap" id="tlv-table"></div>
+          </div>
+          <div class="panel hex-panel">
+            <div class="panel-head"><h2>Bytes</h2><span class="muted small" id="tlv-bytecount"></span></div>
+            <div class="hexview" id="tlv-hex"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tag reference -->
+      <section class="view" id="view-ref" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>EMV tag reference</h2>
+            <input type="search" id="ref-search" placeholder="Search tag or name… (e.g. 9F36, cryptogram)" />
+          </div>
+          <div class="table-wrap">
+            <table class="grid ref-table" id="ref-table"></table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>ISO 8583:1987 data elements</h2></div>
+          <div class="table-wrap">
+            <table class="grid ref-table" id="ref-iso-table"></table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="js/util.js"></script>
+    <script src="js/ref.js"></script>
+    <script src="js/tlv.js"></script>
+    <script src="js/emv.js"></script>
+    <script src="js/iso8583-fields.js"></script>
+    <script src="js/iso8583.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

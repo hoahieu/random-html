@@ -235,7 +235,7 @@
       const def = emv.lookup(n.tag);
       const name = def ? `${esc(def.name)}<span class="src">${esc(def.fmt)}</span>` : `<span class="unknown">${unknownName(n)}</span>`;
       if (n.constructed) {
-        html += `<tr ${attrs} class="constructed"><td class="tag"><button class="caret" data-toggle aria-label="Collapse">▼</button>${n.tag}</td><td class="tname">${name}</td><td class="num">${n.length}</td><td class="val"><span class="muted">${n.children.length} item(s)</span></td><td></td></tr>`;
+        html += `<tr ${attrs} class="constructed"><td class="tag"><button class="caret" data-toggle aria-label="Collapse">▼</button>${n.tag}</td><td class="tname">${name}</td><td class="num">${n.length}</td><td class="val mono">(${U.bytesToHex(n.value)}) <span class="muted">${n.children.length} item(s)</span></td><td></td></tr>`;
       } else {
         const dec = emv.decode(n, ctx);
         const val = n.length ? U.bytesToHex(n.value) : '<span class="muted">(empty)</span>';
@@ -288,7 +288,10 @@
         if (n.text) return { tag: n.tag, length: n.lenText, value: U.bytesToText(n.value) };
         const def = emv.lookup(n.tag);
         const o = { tag: n.tag, name: def ? def.name : null, length: n.length };
-        if (n.constructed) o.children = tlvJSON(n.children, ctx);
+        if (n.constructed) {
+          o.value = U.bytesToHex(n.value);
+          o.children = tlvJSON(n.children, ctx);
+        }
         else {
           o.value = U.bytesToHex(n.value);
           const d = emv.decode(n, ctx);
@@ -449,7 +452,6 @@
       if (f.tlv) {
         assignIds(f.tlv, `f${f.id}-`);
         const count = f.tlv.filter((n) => n.type === 'tlv').length;
-        if (!f.textTlv) val = `<span class="muted">${f.raw.length} bytes</span>`;
         desc = decodedHTML({ text: `${count} ${f.textTlv ? 'text ' : ''}TLV tag(s) — see below` }, f.warn);
       }
       rows.push(

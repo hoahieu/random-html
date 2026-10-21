@@ -52,7 +52,7 @@
     toastTimer = setTimeout(() => (el.hidden = true), 1600);
   }
 
-  async function copy(text) {
+  async function copy(text, msg = 'Copied to clipboard') {
     try {
       await navigator.clipboard.writeText(text);
     } catch (e) {
@@ -63,7 +63,7 @@
       document.execCommand('copy');
       ta.remove();
     }
-    toast('Copied to clipboard');
+    toast(msg);
   }
 
   function statusHTML(items) {
@@ -78,6 +78,45 @@
     }
     if (warn) h += `<div class="fwarn">⚠ ${esc(warn)}</div>`;
     return h;
+  }
+
+  // ---------- share links: ?iso8583=… ?tlv=… ?urldecode=… ----------
+  const SHARE = {
+    iso: { param: 'iso8583', input: '#iso-input' },
+    tlv: { param: 'tlv', input: '#tlv-input' },
+    url: { param: 'urldecode', input: '#url-input' },
+  };
+
+  function shareLink(tab) {
+    const value = $(SHARE[tab].input).value.trim();
+    if (!value) return toast('Nothing to share yet');
+    const u = new URL(location.pathname, location.origin);
+    u.searchParams.set(SHARE[tab].param, value);
+    copy(u.toString(), 'Link copied');
+  }
+
+  /** Fill inputs from the query string; returns the tab to open, if any. */
+  function loadShareParams() {
+    const qs = new URLSearchParams(location.search);
+    let tab = null;
+    for (const [t, { param, input }] of Object.entries(SHARE)) {
+      const v = qs.get(param) ?? (t === 'url' ? qs.get('url') : null);
+      if (v == null) continue;
+      $(input).value = v;
+      tab = tab || t;
+      // Shared links decode with auto-detection, regardless of options saved in this browser
+      if (t === 'iso') {
+        $('#iso-inputMode').value = 'auto';
+        $('#iso-auto').checked = true;
+      }
+      if (t === 'tlv') $('#tlv-inputMode').value = 'auto';
+    }
+    return tab;
+  }
+
+  /** Once the input is edited, the shared query no longer matches it — drop it from the address bar. */
+  function clearShareParams() {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash);
   }
 
   // ---------- tabs & theme ----------
@@ -784,7 +823,12 @@
     renderReference();
     $('#ref-search').addEventListener('input', filterReference);
 
-    showTab(location.hash.slice(1) || 'iso');
+    // Applied last so a shared link wins over inputs restored from this browser
+    const sharedTab = loadShareParams();
+    $$('[data-share]').forEach((b) => b.addEventListener('click', () => shareLink(b.dataset.share)));
+    Object.values(SHARE).forEach(({ input }) => $(input).addEventListener('input', clearShareParams));
+
+    showTab(location.hash.slice(1) || sharedTab || 'iso');
     runISO();
     runTLV();
     runURL();

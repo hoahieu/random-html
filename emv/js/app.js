@@ -323,7 +323,6 @@
       inputMode: $('#iso-inputMode').value,
       auto: $('#iso-auto').checked,
       overrides: $('#iso-overrides').value,
-      raw: $('#iso-raw').checked,
       cfg,
     });
   }
@@ -426,22 +425,15 @@
 
   const META_LABEL = { header: 'HDR', mti: 'MTI', bitmap: 'BMP', trailing: '—' };
 
-  function rawHTML(bytes, offset, length, prefixLen) {
-    const p = U.bytesToHex(bytes, offset, offset + prefixLen);
-    const v = U.bytesToHex(bytes, offset + prefixLen, offset + length);
-    return (p ? `<span class="pfx">${p}</span> ` : '') + v;
-  }
-
   function renderISOTable(res) {
     const rows = [];
     for (const e of res.elements) {
       const title = `offset ${e.offset}, ${e.length} byte(s)`;
-      const raw = `<td class="raw mono">${rawHTML(res.bytes, e.offset, e.length, e.prefixLen || 0)}</td>`;
       if (e.kind !== 'field') {
         const bad = e.kind === 'trailing';
         const desc = bad && res.errors.length ? res.errors[0] : e.desc;
         rows.push(
-          `<tr data-seg="${e.id}" class="meta${bad ? ' bad' : ''}" title="${title}"><td class="de">${META_LABEL[e.kind]}</td><td class="name">${esc(e.label)}</td><td class="type"></td><td class="num">${e.length}</td><td class="val mono">${esc(e.value)}</td><td class="desc">${decodedHTML(desc ? { text: desc } : null)}</td>${raw}</tr>`
+          `<tr data-seg="${e.id}" class="meta${bad ? ' bad' : ''}" title="${title}"><td class="de">${META_LABEL[e.kind]}</td><td class="name">${esc(e.label)}</td><td class="type"></td><td class="num">${e.length}</td><td class="val mono">${esc(e.value)}</td><td class="desc">${decodedHTML(desc ? { text: desc } : null)}</td></tr>`
         );
         continue;
       }
@@ -455,18 +447,17 @@
         desc = decodedHTML({ text: `${count} ${f.textTlv ? 'text ' : ''}TLV tag(s) — see below` }, f.warn);
       }
       rows.push(
-        `<tr data-seg="${e.id}" title="${title}"${f.warn ? ' class="warnrow"' : ''}><td class="de">${f.id}</td><td class="name">${esc(def.name)}${def.custom ? ' <span class="chip">override</span>' : ''}</td><td class="type mono">${esc(iso.typeLabel(def))}</td><td class="num">${f.len}</td><td class="val mono">${val}</td><td class="desc">${desc}</td>${raw}</tr>`
+        `<tr data-seg="${e.id}" title="${title}"${f.warn ? ' class="warnrow"' : ''}><td class="de">${f.id}</td><td class="name">${esc(def.name)}${def.custom ? ' <span class="chip">override</span>' : ''}</td><td class="type mono">${esc(iso.typeLabel(def))}</td><td class="num">${f.len}</td><td class="val mono">${val}</td><td class="desc">${desc}</td></tr>`
       );
       if (f.tlv) {
         const ctx = emv.context(f.tlv);
         rows.push(
-          `<tr class="nested"><td></td><td colspan="6"><div class="nested-title"><span>DE ${f.id} · ${f.textTlv ? 'Text TLV' : 'BER-TLV'}</span><button class="btn link" data-open-tlv="${esc(f.textTlv ? U.bytesToText(f.raw) : U.bytesToHex(f.raw))}" data-mode="${f.textTlv ? 'text' : 'auto'}">Open in TLV tab →</button></div>${tlvTableHTML(f.tlv, ctx)}</td></tr>`
+          `<tr class="nested"><td></td><td colspan="5"><div class="nested-title"><span>DE ${f.id} · ${f.textTlv ? 'Text TLV' : 'BER-TLV'}</span><button class="btn link" data-open-tlv="${esc(f.textTlv ? U.bytesToText(f.raw) : U.bytesToHex(f.raw))}" data-mode="${f.textTlv ? 'text' : 'auto'}">Open in TLV tab →</button></div>${tlvTableHTML(f.tlv, ctx)}</td></tr>`
         );
       }
     }
     const table = $('#iso-table');
-    table.classList.toggle('show-raw', $('#iso-raw').checked);
-    table.innerHTML = `<thead><tr><th>DE</th><th>Name</th><th>Type</th><th class="num">Len</th><th>Value</th><th>Decoded</th><th class="raw">Raw</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+    table.innerHTML = `<thead><tr><th>DE</th><th>Name</th><th>Type</th><th class="num">Len</th><th>Value</th><th>Decoded</th></tr></thead><tbody>${rows.join('')}</tbody>`;
     isoLink.reset();
   }
 
@@ -672,7 +663,6 @@
       $('#iso-inputMode').value = s.inputMode || 'auto';
       $('#iso-auto').checked = s.auto !== false;
       $('#iso-overrides').value = s.overrides || '';
-      $('#iso-raw').checked = !!s.raw;
       if (s.cfg) {
         for (const k of ENC_KEYS) if (s.cfg[k]) $('#iso-' + k).value = s.cfg[k];
         $('#iso-skip').value = s.cfg.skip || 0;
@@ -704,6 +694,14 @@
       store.set('theme', next);
     });
 
+    // Bytes box expand/collapse (collapsed by default)
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-collapse]');
+      if (!b) return;
+      const collapsed = b.closest('.results').classList.toggle('bytes-collapsed');
+      b.setAttribute('aria-expanded', String(!collapsed));
+    });
+
     // ISO events
     const runISOSoon = debounce(runISO, 150);
     $('#iso-input').addEventListener('input', runISOSoon);
@@ -721,10 +719,6 @@
       $('#iso-input').value = '';
       runISO();
       $('#iso-input').focus();
-    });
-    $('#iso-raw').addEventListener('change', () => {
-      $('#iso-table').classList.toggle('show-raw', $('#iso-raw').checked);
-      isoSaveUI();
     });
     $('#iso-copy').addEventListener('click', () => isoLast && copy(isoJSON(isoLast)));
     $('#iso-summary').addEventListener('click', (e) => {

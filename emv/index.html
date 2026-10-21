@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QuickFormat – ISO 8583 &amp; TLV Parser</title>
-    <link rel="stylesheet" href="css/style.css?v=1e01ec23" />
+    <link rel="stylesheet" href="css/style.css?v=826da1ec" />
   </head>
   <body>
     <header class="topbar">
@@ -64,12 +64,11 @@
 
         <div id="iso-out" hidden>
           <div class="panel summary" id="iso-summary"></div>
-          <div class="results">
+          <div class="results bytes-collapsed">
             <div class="panel table-panel">
               <div class="panel-head">
                 <h2>Fields</h2>
                 <div class="actions">
-                  <label class="opt check small"><input type="checkbox" id="iso-raw" /> Raw bytes</label>
                   <button class="btn ghost" id="iso-copy">Copy JSON</button>
                 </div>
               </div>
@@ -78,7 +77,10 @@
               </div>
             </div>
             <div class="panel hex-panel">
-              <div class="panel-head"><h2>Bytes</h2><span class="muted small" id="iso-bytecount"></span></div>
+              <div class="panel-head">
+              <button class="collapse-btn" data-collapse aria-expanded="false"><span class="chev" aria-hidden="true">▸</span><h2>Bytes</h2></button>
+              <span class="muted small" id="iso-bytecount"></span>
+            </div>
               <div class="hexview" id="iso-hex"></div>
             </div>
           </div>
@@ -126,7 +128,7 @@
           <div class="status" id="tlv-status"></div>
         </div>
 
-        <div class="results" id="tlv-out" hidden>
+        <div class="results bytes-collapsed" id="tlv-out" hidden>
           <div class="panel table-panel">
             <div class="panel-head">
               <h2>Tags</h2>
@@ -139,7 +141,10 @@
             <div class="table-wrap" id="tlv-table"></div>
           </div>
           <div class="panel hex-panel">
-            <div class="panel-head"><h2>Bytes</h2><span class="muted small" id="tlv-bytecount"></span></div>
+            <div class="panel-head">
+              <button class="collapse-btn" data-collapse aria-expanded="false"><span class="chev" aria-hidden="true">▸</span><h2>Bytes</h2></button>
+              <span class="muted small" id="tlv-bytecount"></span>
+            </div>
             <div class="hexview" id="tlv-hex"></div>
           </div>
         </div>
@@ -210,6 +215,6 @@
     <script src="js/iso8583-fields.js?v=0ad5139d"></script>
     <script src="js/iso8583.js?v=3fac4c90"></script>
     <script src="js/urldecode.js?v=895adb3e"></script>
-    <script src="js/app.js?v=b18e6ced"></script>
+    <script src="js/app.js?v=342b5856"></script>
   </body>
 </html>

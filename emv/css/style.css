@@ -214,6 +214,48 @@ main {
   gap: 16px;
   align-items: start;
 }
+#iso-out {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Bytes box collapsed: full-width bar above the table */
+.results.bytes-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+.results.bytes-collapsed .hex-panel {
+  order: -1;
+  position: static;
+}
+.results.bytes-collapsed .hexview {
+  display: none;
+}
+.results.bytes-collapsed .hex-panel .panel-head {
+  margin-bottom: 0;
+}
+.collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.collapse-btn:hover,
+.collapse-btn:hover h2 {
+  color: var(--accent);
+}
+.chev {
+  display: inline-block;
+  font-size: 11px;
+  transition: transform 0.12s;
+}
+.collapse-btn[aria-expanded='true'] .chev {
+  transform: rotate(90deg);
+}
 .hex-panel {
   position: sticky;
   top: 68px;
@@ -509,18 +551,6 @@ table.grid {
 .grid tr.bad td.de,
 .grid tr.bad td.val {
   color: var(--err);
-}
-.iso-table .raw {
-  display: none;
-  word-break: break-all;
-  color: var(--muted);
-  max-width: 280px;
-}
-.iso-table.show-raw .raw {
-  display: table-cell;
-}
-.raw .pfx {
-  color: var(--accent);
 }
 .dtext {
   color: var(--text);
